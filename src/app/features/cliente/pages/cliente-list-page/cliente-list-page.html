@@ -1,0 +1,39 @@
+<app-header></app-header>
+<app-nav></app-nav>
+ 
+<div class="pagina">
+  <div class="encabezado">
+    <h2>Gestión de Clientes</h2>
+    <button class="btn-nuevo" (click)="irANuevo()">+ Nuevo Cliente</button>
+  </div>
+ 
+  <p>Total: {{ clienteService.clientes().length }} clientes registrados</p>
+ 
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Teléfono</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (cliente of clienteService.clientes(); track cliente.id) {
+        <tr>
+          <td>{{ cliente.id }}</td>
+          <td>{{ cliente.nombre }}</td>
+          <td>{{ cliente.email }}</td>
+          <td>{{ cliente.telefono }}</td>
+          <td class="acciones">
+            <button class="btn-editar" (click)="irAEditar(cliente.id)">Editar</button>
+            <button class="btn-eliminar" (click)="eliminar(cliente.id)">Eliminar</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+ 
+<app-footer></app-footer>

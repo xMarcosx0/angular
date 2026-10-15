@@ -1,0 +1,25 @@
+/* src/app/features/cliente/pages/cliente-form-page/cliente-form-page.css */
+ 
+.pagina { padding: 1.5rem; }
+ 
+h2 { color: #1F3864; margin-bottom: 1.5rem; }
+ 
+.tarjeta-form {
+  max-width: 500px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+ 
+.botones {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+ 
+button { padding: 0.5rem 1.2rem; border: none; border-radius: 4px; cursor: pointer; }
+ 
+.btn-guardar  { background-color: #2E75B6; color: white; font-weight: bold; }
+.btn-cancelar { background-color: #ccc; color: #333; }

@@ -1,0 +1,22 @@
+<!-- src/app/features/cliente/pages/cliente-form-page/cliente-form-page.html -->
+ 
+<app-header></app-header>
+<app-nav></app-nav>
+ 
+<div class="pagina">
+  <h2>{{ esEdicion ? 'Editar Cliente' : 'Nuevo Cliente' }}</h2>
+ 
+  <div class="tarjeta-form">
+    <!-- Componente reutilizable recibe el FormGroup -->
+    <app-cliente-form [form]="form"></app-cliente-form>
+ 
+    <div class="botones">
+      <button class="btn-guardar" (click)="guardar()">
+        {{ esEdicion ? 'Actualizar' : 'Guardar' }}
+      </button>
+      <button class="btn-cancelar" (click)="cancelar()">Cancelar</button>
+    </div>
+  </div>
+</div>
+ 
+<app-footer></app-footer>

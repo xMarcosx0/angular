@@ -1,0 +1,243 @@
+<div class="monitoreo-container">
+  <!-- Sección de Últimas Mediciones Resumen (KPIs) -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon">🌡️</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Temperatura Promedio</span>
+        <span class="kpi-value">{{ promedioTemp() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon">💧</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Humedad Promedio</span>
+        <span class="kpi-value">{{ promedioHumedad() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card alert">
+      <div class="kpi-icon">⚠️</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Lecturas en Alerta / Crítico</span>
+        <span class="kpi-value red">{{ alertasActivasCount() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon">📊</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Histórico de Lecturas</span>
+        <span class="kpi-value">{{ totalLecturasCount() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encabezado del Módulo -->
+  <div class="modulo-header">
+    <div class="titulo">
+      <h2>Monitoreo Ambiental IoT</h2>
+      <p>Histórico y registro en tiempo real de mediciones de sensores por galpón</p>
+    </div>
+    <button class="btn-primario" (click)="abrirModalNuevo()">+ Registrar Lectura</button>
+  </div>
+
+  <!-- Barra de Búsqueda y Filtros -->
+  <div class="toolbar">
+    <div class="filters-group">
+      <input 
+        type="text" 
+        placeholder="Buscar por lectura, sensor o galpón..." 
+        [ngModel]="filtroBusqueda()" 
+        (ngModelChange)="filtroBusqueda.set($event); paginaActual.set(1)"
+        class="search-input"
+      />
+
+      <select 
+        [ngModel]="filtroGalpon()" 
+        (ngModelChange)="filtroGalpon.set($event); paginaActual.set(1)"
+        class="filter-select">
+        <option value="Todos">Todos los Galpones</option>
+        <option value="GAL-001">GAL-001</option>
+        <option value="GAL-002">GAL-002</option>
+        <option value="GAL-003">GAL-003</option>
+        <option value="GAL-004">GAL-004</option>
+        <option value="GAL-005">GAL-005</option>
+      </select>
+
+      <select 
+        [ngModel]="filtroTipo()" 
+        (ngModelChange)="filtroTipo.set($event); paginaActual.set(1)"
+        class="filter-select">
+        <option value="Todos">Todos los Parámetros</option>
+        <option value="Temperatura">Temperatura (°C)</option>
+        <option value="Humedad">Humedad (%)</option>
+        <option value="Dióxido de Carbono (CO2)">CO2 (ppm)</option>
+        <option value="Amoníaco (NH3)">Amoníaco (NH3)</option>
+        <option value="Luminosidad">Luminosidad (lux)</option>
+      </select>
+
+      <select 
+        [ngModel]="filtroEstado()" 
+        (ngModelChange)="filtroEstado.set($event); paginaActual.set(1)"
+        class="filter-select">
+        <option value="Todos">Todos los Estados</option>
+        <option value="Normal">Normal</option>
+        <option value="Alerta">Alerta</option>
+        <option value="Crítico">Crítico</option>
+      </select>
+    </div>
+
+    <span class="total-count">
+      Mostrando <strong>{{ lecturasFiltradas().length }}</strong> de {{ totalLecturasCount() }} lecturas
+    </span>
+  </div>
+
+  <!-- Tabla del Histórico de Lecturas -->
+  <div class="tabla-wrapper">
+    <table class="tabla-lecturas">
+      <thead>
+        <tr>
+          <th>Cód. Lectura</th>
+          <th>Sensor IoT</th>
+          <th>Galpón</th>
+          <th>Parámetro</th>
+          <th>Medición</th>
+          <th>Fecha y Hora</th>
+          <th>Estado</th>
+          <th>Observaciones</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (lectura of lecturasPaginadas(); track lectura.id) {
+          <tr>
+            <td class="font-bold code-badge">{{ lectura.codigoLectura }}</td>
+            <td class="font-bold">{{ lectura.sensorCodigo }}</td>
+            <td>
+              <span class="galpon-badge">🛖 {{ lectura.galponCodigo }}</span>
+            </td>
+            <td>
+              <span class="type-tag">
+                @switch (lectura.tipoSensor) {
+                  @case ('Temperatura') { 🌡️ }
+                  @case ('Humedad') { 💧 }
+                  @case ('Dióxido de Carbono (CO2)') { 💨 }
+                  @case ('Amoníaco (NH3)') { ☣️ }
+                  @case ('Luminosidad') { 💡 }
+                }
+                {{ lectura.tipoSensor }}
+              </span>
+            </td>
+            <td class="font-bold value-text">
+              {{ lectura.valor }} {{ lectura.unidadMedida }}
+            </td>
+            <td class="date-text">🕒 {{ lectura.fechaHora }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="lectura.estado.toLowerCase()">
+                {{ lectura.estado }}
+              </span>
+            </td>
+            <td class="obs-text">{{ lectura.observaciones || '-' }}</td>
+            <td class="acciones-cell">
+              <button class="btn-icon eliminar" (click)="eliminarLectura(lectura.id)" title="Eliminar Registro">🗑️</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="9" class="no-data">No se encontraron lecturas registradas en el histórico.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginador -->
+  <div class="pagination-bar">
+    <button class="btn-page" [disabled]="paginaActual() === 1" (click)="irAPagina(paginaActual() - 1)">
+      ◀ Anterior
+    </button>
+    <span class="page-info">Página <strong>{{ paginaActual() }}</strong> de <strong>{{ totalPaginas() }}</strong></span>
+    <button class="btn-page" [disabled]="paginaActual() === totalPaginas()" (click)="irAPagina(paginaActual() + 1)">
+      Siguiente ▶
+    </button>
+  </div>
+
+  <!-- Modal Registrar Lectura Manual -->
+  @if (mostrarModal()) {
+    <div class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Registrar Nueva Lectura Ambiental</h3>
+          <button class="btn-close" (click)="cerrarModal()">✕</button>
+        </div>
+
+        <form (submit)="$event.preventDefault(); guardarLectura()" class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código de Lectura</label>
+              <input type="text" [(ngModel)]="lecturaForm().codigoLectura" name="codigoLectura" required readonly class="read-only" />
+            </div>
+            <div class="form-group">
+              <label>Galpón</label>
+              <select [(ngModel)]="lecturaForm().galponCodigo" name="galponCodigo">
+                <option value="GAL-001">GAL-001 (Galpón Norte #1)</option>
+                <option value="GAL-002">GAL-002 (Galpón Norte #2)</option>
+                <option value="GAL-003">GAL-003 (Galpón Norte #3)</option>
+                <option value="GAL-004">GAL-004 (Galpón Sur #4)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Parámetro Medido</label>
+              <select [(ngModel)]="lecturaForm().tipoSensor" name="tipoSensor" (change)="actualizarUnidadPorTipo()">
+                <option value="Temperatura">Temperatura</option>
+                <option value="Humedad">Humedad</option>
+                <option value="Dióxido de Carbono (CO2)">Dióxido de Carbono (CO2)</option>
+                <option value="Amoníaco (NH3)">Amoníaco (NH3)</option>
+                <option value="Luminosidad">Luminosidad</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Código de Sensor</label>
+              <input type="text" [(ngModel)]="lecturaForm().sensorCodigo" name="sensorCodigo" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Valor Registrado ({{ lecturaForm().unidadMedida }})</label>
+              <input type="number" step="0.1" [(ngModel)]="lecturaForm().valor" name="valor" required />
+            </div>
+            <div class="form-group">
+              <label>Estado Evaluado</label>
+              <select [(ngModel)]="lecturaForm().estado" name="estado">
+                <option value="Normal">🟢 Normal</option>
+                <option value="Alerta">🟡 Alerta</option>
+                <option value="Crítico">🔴 Crítico</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Fecha y Hora de Medición</label>
+            <input type="text" [(ngModel)]="lecturaForm().fechaHora" name="fechaHora" required />
+          </div>
+
+          <div class="form-group">
+            <label>Observaciones</label>
+            <textarea [(ngModel)]="lecturaForm().observaciones" name="observaciones" rows="2" placeholder="Notas sobre la lectura..."></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secundario" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primario">Registrar Lectura</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

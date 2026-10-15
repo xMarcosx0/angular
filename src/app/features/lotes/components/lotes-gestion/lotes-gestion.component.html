@@ -1,0 +1,262 @@
+<div class="lotes-container">
+  <!-- Tarjetas Resumen (KPIs) -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon">🐥</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Total Lotes Registrados</span>
+        <span class="kpi-value">{{ loteService.lotes().length }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon">🟢</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Lotes Activos</span>
+        <span class="kpi-value">{{ lotesActivosCount() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon">🐔</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Población Actual de Aves</span>
+        <span class="kpi-value">{{ totalAvesVivas() | number }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card alert">
+      <div class="kpi-icon">⚠️</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Mortalidad Acumulada</span>
+        <span class="kpi-value red">{{ mortalidadGlobalCount() | number }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encabezado del Módulo -->
+  <div class="modulo-header">
+    <div class="titulo">
+      <h2>Gestión de Lotes de Aves</h2>
+      <p>Control de lotes asociados a galpones, razas y seguimiento de edades</p>
+    </div>
+    <button class="btn-primario" (click)="abrirModalNuevo()">+ Crear Nuevo Lote</button>
+  </div>
+
+  <!-- Barra de Búsqueda y Filtros -->
+  <div class="toolbar">
+    <div class="filters-group">
+      <input 
+        type="text" 
+        placeholder="Buscar por lote, galpón o raza..." 
+        [ngModel]="filtroBusqueda()" 
+        (ngModelChange)="filtroBusqueda.set($event); paginaActual.set(1)"
+        class="search-input"
+      />
+
+      <select 
+        [ngModel]="filtroEstado()" 
+        (ngModelChange)="filtroEstado.set($event); paginaActual.set(1)"
+        class="filter-select">
+        <option value="Todos">Todos los Estados</option>
+        <option value="En Crecimiento">En Crecimiento</option>
+        <option value="En Producción">En Producción</option>
+        <option value="Finalizado">Finalizado</option>
+      </select>
+    </div>
+
+    <span class="total-count">
+      Mostrando <strong>{{ lotesFiltrados().length }}</strong> de {{ loteService.lotes().length }} lotes
+    </span>
+  </div>
+
+  <!-- Tabla de Consultar Lotes -->
+  <div class="tabla-wrapper">
+    <table class="tabla-lotes">
+      <thead>
+        <tr>
+          <th>Código Lote</th>
+          <th>Galpón Asignado</th>
+          <th>Raza de Ave</th>
+          <th>Población (Actual / Inicial)</th>
+          <th>Edad (Semanas)</th>
+          <th>Fecha Ingreso</th>
+          <th>Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (lote of lotesPaginados(); track lote.id) {
+          <tr>
+            <td class="font-bold code-badge">{{ lote.codigoLote }}</td>
+            <td class="font-bold">
+              <span class="galpon-badge">🛖 {{ lote.galponCodigo }}</span>
+            </td>
+            <td>{{ lote.raza }}</td>
+            <td>
+              <div class="population-info">
+                <span>{{ lote.cantidadActual | number }} / {{ lote.cantidadInicial | number }}</span>
+                <span class="mortality-tag">({{ lote.mortalidadAcumulada }} bajas)</span>
+              </div>
+            </td>
+            <td>📅 {{ lote.edadSemanas }} sem.</td>
+            <td>{{ lote.fechaIngreso }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="lote.estado.toLowerCase().replace(' ', '-')">
+                {{ lote.estado }}
+              </span>
+            </td>
+            <td class="acciones-cell">
+              <button class="btn-icon historial" (click)="abrirHistorial(lote)" title="Consultar Historial">📋 Historial</button>
+              <button class="btn-icon editar" (click)="abrirModalEditar(lote)" title="Actualizar Lote">✏️</button>
+              <button class="btn-icon eliminar" (click)="eliminarLote(lote.id)" title="Eliminar Lote">🗑️</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="8" class="no-data">No se encontraron lotes de aves registrados.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginador -->
+  <div class="pagination-bar">
+    <button class="btn-page" [disabled]="paginaActual() === 1" (click)="irAPagina(paginaActual() - 1)">
+      ◀ Anterior
+    </button>
+    <span class="page-info">Página <strong>{{ paginaActual() }}</strong> de <strong>{{ totalPaginas() }}</strong></span>
+    <button class="btn-page" [disabled]="paginaActual() === totalPaginas()" (click)="irAPagina(paginaActual() + 1)">
+      Siguiente ▶
+    </button>
+  </div>
+
+  <!-- Modal Crear / Actualizar Lote -->
+  @if (mostrarModalForm()) {
+    <div class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>{{ modoEdicion() ? 'Actualizar Información de Lote' : 'Crear Nuevo Lote de Aves' }}</h3>
+          <button class="btn-close" (click)="cerrarModales()">✕</button>
+        </div>
+
+        <form (submit)="$event.preventDefault(); guardarLote()" class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código de Lote</label>
+              <input type="text" [(ngModel)]="loteForm().codigoLote" name="codigoLote" required readonly class="read-only" />
+            </div>
+            <div class="form-group">
+              <label>Galpón Asignado</label>
+              <select [(ngModel)]="loteForm().galponCodigo" name="galponCodigo">
+                <option value="GAL-001">GAL-001 (Galpón Norte #1)</option>
+                <option value="GAL-002">GAL-002 (Galpón Norte #2)</option>
+                <option value="GAL-003">GAL-003 (Galpón Norte #3)</option>
+                <option value="GAL-004">GAL-004 (Galpón Sur #4)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Raza de Ave</label>
+              <select [(ngModel)]="loteForm().raza" name="raza">
+                <option value="Hy-Line Brown">Hy-Line Brown</option>
+                <option value="Cobb 500">Cobb 500</option>
+                <option value="Ross 308">Ross 308</option>
+                <option value="Lohmann LSL">Lohmann LSL</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Edad (Semanas)</label>
+              <input type="number" [(ngModel)]="loteForm().edadSemanas" name="edadSemanas" required min="1" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Población Inicial</label>
+              <input type="number" [(ngModel)]="loteForm().cantidadInicial" name="cantidadInicial" required min="100" />
+            </div>
+            <div class="form-group">
+              <label>Población Actual</label>
+              <input type="number" [(ngModel)]="loteForm().cantidadActual" name="cantidadActual" required min="0" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha de Ingreso</label>
+              <input type="date" [(ngModel)]="loteForm().fechaIngreso" name="fechaIngreso" required />
+            </div>
+            <div class="form-group">
+              <label>Estado del Lote</label>
+              <select [(ngModel)]="loteForm().estado" name="estado">
+                <option value="En Crecimiento">En Crecimiento</option>
+                <option value="En Producción">En Producción</option>
+                <option value="Finalizado">Finalizado</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secundario" (click)="cerrarModales()">Cancelar</button>
+            <button type="submit" class="btn-primario">{{ modoEdicion() ? 'Actualizar' : 'Crear Lote' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Consultar Historial -->
+  @if (mostrarModalHistorial()) {
+    <div class="modal-overlay">
+      <div class="modal-content modal-lg">
+        <div class="modal-header">
+          <h3>📋 Consultar Historial - Lote {{ loteSeleccionadoHistorial()?.codigoLote }}</h3>
+          <button class="btn-close" (click)="cerrarModales()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="historial-info-card">
+            <p><strong>Galpón:</strong> {{ loteSeleccionadoHistorial()?.galponCodigo }} | <strong>Raza:</strong> {{ loteSeleccionadoHistorial()?.raza }}</p>
+            <p><strong>Población Actual:</strong> {{ loteSeleccionadoHistorial()?.cantidadActual }} aves | <strong>Edad:</strong> {{ loteSeleccionadoHistorial()?.edadSemanas }} semanas</p>
+          </div>
+
+          <h4>Registros de Monitoreo Recientes</h4>
+          <table class="tabla-historial">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Semana</th>
+                <th>Bajas (Día)</th>
+                <th>Alimento (Kg)</th>
+                <th>Observación</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (reg of loteSeleccionadoHistorial()?.historial; track reg.fecha) {
+                <tr>
+                  <td>{{ reg.fecha }}</td>
+                  <td>Semana {{ reg.semana }}</td>
+                  <td class="red-text">{{ reg.mortalidadDia }} aves</td>
+                  <td>{{ reg.alimentoKg }} kg</td>
+                  <td>{{ reg.observacion }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="no-data">Sin registros en el historial.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-primario" (click)="cerrarModales()">Cerrar Historial</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

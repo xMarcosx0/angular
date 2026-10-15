@@ -1,0 +1,15 @@
+:root {
+  --primary-dark: #0B6E4F;
+  --primary-medium: #2E8B57;
+  --accent-gold: #D4AF37;
+  --bg-cream: #F7F3E3;
+  --text-dark: #1E1E1E;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-cream);
+  color: var(--text-dark);
+}

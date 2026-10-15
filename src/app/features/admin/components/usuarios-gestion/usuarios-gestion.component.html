@@ -1,0 +1,118 @@
+<div class="gestion-container">
+  <!-- Encabezado y Barra de Filtro/Búsqueda -->
+  <div class="modulo-header">
+    <div class="titulo">
+      <h2>Gestión de Usuarios</h2>
+      <p>Administra el acceso y roles del personal de PoultryTrack</p>
+    </div>
+    <button class="btn-primario" (click)="abrirModalNuevo()">+ Registrar Usuario</button>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <input 
+        type="text" 
+        placeholder="Buscar por nombre, email o rol..." 
+        [ngModel]="filtroBusqueda()" 
+        (ngModelChange)="filtroBusqueda.set($event)"
+      />
+    </div>
+    <span class="total-badge">Total: {{ usuariosFiltrados().length }} usuarios</span>
+  </div>
+
+  <!-- Tabla de Consultar Usuarios -->
+  <div class="tabla-wrapper">
+    <table class="tabla-usuarios">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Correo Electrónico</th>
+          <th>Teléfono</th>
+          <th>Rol asignado</th>
+          <th>Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (usuario of usuariosFiltrados(); track usuario.id) {
+          <tr>
+            <td class="font-bold">{{ usuario.nombre }}</td>
+            <td>{{ usuario.email }}</td>
+            <td>{{ usuario.telefono }}</td>
+            <td>
+              <span class="role-badge" [ngClass]="usuario.rol.toLowerCase()">
+                {{ usuario.rol }}
+              </span>
+            </td>
+            <td>
+              <span class="status-badge" [class.activo]="usuario.estado === 'Activo'">
+                {{ usuario.estado }}
+              </span>
+            </td>
+            <td class="acciones-cell">
+              <button class="btn-icon editar" (click)="abrirModalEditar(usuario)">✏️ Editar</button>
+              <button class="btn-icon eliminar" (click)="eliminarUsuario(usuario.id)">🗑️</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="no-data">No se encontraron usuarios registrados.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Visual de Registrar / Editar -->
+  @if (mostrarModal()) {
+    <div class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>{{ modoEdicion() ? 'Editar Usuario' : 'Registrar Nuevo Usuario' }}</h3>
+          <button class="btn-close" (click)="cerrarModal()">✕</button>
+        </div>
+
+        <form (submit)="$event.preventDefault(); guardarUsuario()" class="modal-body">
+          <div class="form-group">
+            <label>Nombre Completo</label>
+            <input type="text" [(ngModel)]="usuarioForm().nombre" name="nombre" required placeholder="Ej. Juan Pérez" />
+          </div>
+
+          <div class="form-group">
+            <label>Correo Electrónico</label>
+            <input type="email" [(ngModel)]="usuarioForm().email" name="email" required placeholder="ejemplo@poultrytrack.com" />
+          </div>
+
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="text" [(ngModel)]="usuarioForm().telefono" name="telefono" placeholder="+57 300 000 0000" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Rol de Usuario</label>
+              <select [(ngModel)]="usuarioForm().rol" name="rol">
+                <option value="Administrador">Administrador</option>
+                <option value="Veterinario">Veterinario</option>
+                <option value="Trabajador">Trabajador</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Estado</label>
+              <select [(ngModel)]="usuarioForm().estado" name="estado">
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secundario" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primario">{{ modoEdicion() ? 'Guardar Cambios' : 'Registrar' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

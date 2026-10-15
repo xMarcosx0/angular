@@ -1,0 +1,271 @@
+<div class="sanidad-container">
+  <!-- Tarjetas Resumen (KPIs) -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon">🩺</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Total Evaluaciones</span>
+        <span class="kpi-value">{{ totalRegistrosCount() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon">🟢</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Lotes Saludables</span>
+        <span class="kpi-value">{{ saludablesCount() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card warning">
+      <div class="kpi-icon">🟡</div>
+      <div class="kpi-data">
+        <span class="kpi-title">En Observación</span>
+        <span class="kpi-value gold">{{ observacionCount() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card alert">
+      <div class="kpi-icon">🚨</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Alertas / Tratamiento</span>
+        <span class="kpi-value red">{{ alertasTratamientoCount() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encabezado del Módulo -->
+  <div class="modulo-header">
+    <div class="titulo">
+      <h2>Módulo de Estado Sanitario</h2>
+      <p>Registro de salud general, síntomas y seguimiento de observaciones médicas avícolas</p>
+    </div>
+    <button class="btn-primario" (click)="abrirModalNuevo()">+ Registrar Estado Sanitario</button>
+  </div>
+
+  <!-- Barra de Filtros -->
+  <div class="toolbar">
+    <div class="filters-group">
+      <input 
+        type="text" 
+        placeholder="Buscar por código, lote, galpón o veterinario..." 
+        [ngModel]="filtroBusqueda()" 
+        (ngModelChange)="filtroBusqueda.set($event); paginaActual.set(1)"
+        class="search-input"
+      />
+
+      <select 
+        [ngModel]="filtroGalpon()" 
+        (ngModelChange)="filtroGalpon.set($event); paginaActual.set(1)"
+        class="filter-select">
+        <option value="Todos">Todos los Galpones</option>
+        <option value="GAL-001">GAL-001</option>
+        <option value="GAL-002">GAL-002</option>
+        <option value="GAL-003">GAL-003</option>
+        <option value="GAL-004">GAL-004</option>
+        <option value="GAL-005">GAL-005</option>
+      </select>
+
+      <select 
+        [ngModel]="filtroEstado()" 
+        (ngModelChange)="filtroEstado.set($event); paginaActual.set(1)"
+        class="filter-select">
+        <option value="Todos">Todos los Estados</option>
+        <option value="Saludable">Saludable</option>
+        <option value="En Observación">En Observación</option>
+        <option value="Alerta Sanitaria">Alerta Sanitaria</option>
+        <option value="En Tratamiento">En Tratamiento</option>
+      </select>
+    </div>
+
+    <span class="total-count">
+      Mostrando <strong>{{ registrosFiltrados().length }}</strong> de {{ totalRegistrosCount() }} registros
+    </span>
+  </div>
+
+  <!-- Tabla del Histórico de Estado Sanitario -->
+  <div class="tabla-wrapper">
+    <table class="tabla-sanidad">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Lote</th>
+          <th>Galpón</th>
+          <th>Fecha Evaluada</th>
+          <th>Estado General</th>
+          <th>Aves Afectadas</th>
+          <th>Síntomas Principales</th>
+          <th>Veterinario</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (reg of registrosPaginados(); track reg.id) {
+          <tr>
+            <td class="font-bold code-badge">{{ reg.codigoRegistro }}</td>
+            <td class="font-bold">
+              <span class="lote-badge">🐥 {{ reg.loteCodigo }}</span>
+            </td>
+            <td>
+              <span class="galpon-badge">🛖 {{ reg.galponCodigo }}</span>
+            </td>
+            <td>📅 {{ reg.fechaEvaluacion }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="reg.estadoGeneral.toLowerCase().replace(' ', '-').replace('ó', 'o')">
+                {{ reg.estadoGeneral }}
+              </span>
+            </td>
+            <td [class.red-text]="reg.avesAfectadasCount > 0" class="font-bold">
+              {{ reg.avesAfectadasCount }} aves
+            </td>
+            <td class="sintoma-text">{{ reg.sintomasPrincipales }}</td>
+            <td>👩‍⚕️ {{ reg.veterinarioCargo }}</td>
+            <td class="acciones-cell">
+              <button class="btn-icon obs-btn" (click)="abrirObservaciones(reg)" title="Ver u Agregar Observaciones">
+                💬 Notes ({{ reg.observaciones.length }})
+              </button>
+              <button class="btn-icon editar" (click)="abrirModalEditar(reg)" title="Editar Evaluación">✏️</button>
+              <button class="btn-icon eliminar" (click)="eliminarRegistro(reg.id)" title="Eliminar Registro">🗑️</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="9" class="no-data">No se encontraron evaluaciones sanitarias.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginador -->
+  <div class="pagination-bar">
+    <button class="btn-page" [disabled]="paginaActual() === 1" (click)="irAPagina(paginaActual() - 1)">
+      ◀ Anterior
+    </button>
+    <span class="page-info">Página <strong>{{ paginaActual() }}</strong> de <strong>{{ totalPaginas() }}</strong></span>
+    <button class="btn-page" [disabled]="paginaActual() === totalPaginas()" (click)="irAPagina(paginaActual() + 1)">
+      Siguiente ▶
+    </button>
+  </div>
+
+  <!-- Modal Registrar / Editar Estado Sanitario -->
+  @if (mostrarModalForm()) {
+    <div class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>{{ modoEdicion() ? 'Editar Evaluación Sanitaria' : 'Registrar Estado Sanitario de Aves' }}</h3>
+          <button class="btn-close" (click)="cerrarModales()">✕</button>
+        </div>
+
+        <form (submit)="$event.preventDefault(); guardarRegistroSanitario()" class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código Evaluación</label>
+              <input type="text" [(ngModel)]="sanitarioForm().codigoRegistro" name="codigoRegistro" required readonly class="read-only" />
+            </div>
+            <div class="form-group">
+              <label>Fecha de Evaluación</label>
+              <input type="date" [(ngModel)]="sanitarioForm().fechaEvaluacion" name="fechaEvaluacion" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Lote de Aves</label>
+              <select [(ngModel)]="sanitarioForm().loteCodigo" name="loteCodigo">
+                <option value="LOT-2026-001">LOT-2026-001</option>
+                <option value="LOT-2026-002">LOT-2026-002</option>
+                <option value="LOT-2026-003">LOT-2026-003</option>
+                <option value="LOT-2026-004">LOT-2026-004</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Galpón Asignado</label>
+              <select [(ngModel)]="sanitarioForm().galponCodigo" name="galponCodigo">
+                <option value="GAL-001">GAL-001</option>
+                <option value="GAL-002">GAL-002</option>
+                <option value="GAL-003">GAL-003</option>
+                <option value="GAL-004">GAL-004</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Estado General</label>
+              <select [(ngModel)]="sanitarioForm().estadoGeneral" name="estadoGeneral">
+                <option value="Saludable">🟢 Saludable</option>
+                <option value="En Observación">🟡 En Observación</option>
+                <option value="Alerta Sanitaria">🟠 Alerta Sanitaria</option>
+                <option value="En Tratamiento">🔴 En Tratamiento</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Aves Afectadas (Estimado)</label>
+              <input type="number" [(ngModel)]="sanitarioForm().avesAfectadasCount" name="avesAfectadasCount" required min="0" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Síntomas Principales / Observados</label>
+            <input type="text" [(ngModel)]="sanitarioForm().sintomasPrincipales" name="sintomasPrincipales" required placeholder="Ej. Decaimiento, plumas erizadas..." />
+          </div>
+
+          <div class="form-group">
+            <label>Veterinario a Cargo</label>
+            <input type="text" [(ngModel)]="sanitarioForm().veterinarioCargo" name="veterinarioCargo" required />
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secundario" (click)="cerrarModales()">Cancelar</button>
+            <button type="submit" class="btn-primario">{{ modoEdicion() ? 'Actualizar' : 'Guardar Evaluación' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Observaciones Sanitarias e Historial de Notas -->
+  @if (mostrarModalObservaciones() && registroSeleccionado()) {
+    <div class="modal-overlay">
+      <div class="modal-content modal-lg">
+        <div class="modal-header">
+          <h3>💬 Observaciones Sanitarias - {{ registroSeleccionado()?.codigoRegistro }}</h3>
+          <button class="btn-close" (click)="cerrarModales()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="historial-info-card">
+            <p><strong>Lote:</strong> {{ registroSeleccionado()?.loteCodigo }} | <strong>Galpón:</strong> {{ registroSeleccionado()?.galponCodigo }}</p>
+            <p><strong>Estado Actual:</strong> {{ registroSeleccionado()?.estadoGeneral }} ({{ registroSeleccionado()?.avesAfectadasCount }} aves afectadas)</p>
+          </div>
+
+          <h4>Agregar Nueva Observación Sanitaria</h4>
+          <div class="add-obs-box">
+            <textarea [(ngModel)]="nuevaNotaObservacion" rows="2" placeholder="Escribe un reporte o indicación sanitaria..."></textarea>
+            <button type="button" class="btn-primario" (click)="agregarObservacion()">+ Agregar Nota</button>
+          </div>
+
+          <h4>Historial de Observaciones Registradas</h4>
+          <div class="obs-list">
+            @for (obs of registroSeleccionado()?.observaciones; track obs.id) {
+              <div class="obs-card">
+                <div class="obs-header">
+                  <span class="user font-bold">👤 {{ obs.usuario }}</span>
+                  <span class="time">🕒 {{ obs.fechaHora }}</span>
+                </div>
+                <p class="obs-body">{{ obs.nota }}</p>
+              </div>
+            } @empty {
+              <p class="no-data">No hay observaciones registradas aún.</p>
+            }
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-primario" (click)="cerrarModales()">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

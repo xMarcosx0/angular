@@ -1,0 +1,61 @@
+<div class="admin-layout">
+  <!-- Header Principal -->
+  <header class="main-header">
+    <div class="brand">
+      <span class="logo">🐔</span>
+      <div>
+        <h1>PoultryTrack</h1>
+        <span class="sub-brand">Panel de Administración</span>
+      </div>
+    </div>
+
+    <div class="user-profile">
+      @if (authService.usuarioActual(); as usuario) {
+        <div class="user-info">
+          <span class="user-name">{{ usuario.nombre }}</span>
+          <span class="user-role">{{ usuario.rol }}</span>
+        </div>
+      } @else {
+        <div class="user-info">
+          <span class="user-name">Marcos Márquez</span>
+          <span class="user-role">Administrador</span>
+        </div>
+      }
+      <button class="btn-logout" (click)="cerrarSesion()" title="Cerrar Sesión">
+        🚪 Salir
+      </button>
+    </div>
+  </header>
+
+  <!-- Barra de Mini-Pestañas / Módulos de Administrador -->
+  <nav class="sub-nav">
+  <button class="tab-btn" [class.active]="pestanaActiva() === 'usuarios'" (click)="seleccionarPestana('usuarios')">👥 Usuarios</button>
+  <button class="tab-btn" [class.active]="pestanaActiva() === 'galpones'" (click)="seleccionarPestana('galpones')">🛖 Galpones</button>
+  <button class="tab-btn" [class.active]="pestanaActiva() === 'lotes'" (click)="seleccionarPestana('lotes')">🐥 Lotes</button>
+  <button class="tab-btn" [class.active]="pestanaActiva() === 'sensores'" (click)="seleccionarPestana('sensores')">📡 Sensores</button>
+  <button class="tab-btn" [class.active]="pestanaActiva() === 'monitoreo'" (click)="seleccionarPestana('monitoreo')">🌡️ Monitoreo</button>
+  <button class="tab-btn" [class.active]="pestanaActiva() === 'produccion'" (click)="seleccionarPestana('produccion')">🥚 Producción</button>
+  <button class="tab-btn" [class.active]="pestanaActiva() === 'sanidad'" (click)="seleccionarPestana('sanidad')">🩺 Sanidad</button>
+  <button class="tab-btn" [class.active]="pestanaActiva() === 'alertas'" (click)="seleccionarPestana('alertas')">🔔 Alertas</button>
+  <button class="tab-btn" [class.active]="pestanaActiva() === 'reportes'" (click)="seleccionarPestana('reportes')">📊 Reportes</button>
+</nav>
+
+<main class="content-body">
+  @switch (pestanaActiva()) {
+    @case ('usuarios') { <app-usuarios-gestion></app-usuarios-gestion> }
+    @case ('galpones') { <app-galpones-gestion></app-galpones-gestion> }
+    @case ('lotes') { <app-lotes-gestion></app-lotes-gestion> }
+    @case ('sensores') { <app-sensores-gestion></app-sensores-gestion> }
+    @case ('monitoreo') { <app-monitoreo-ambiental></app-monitoreo-ambiental> }
+    @case ('produccion') { <app-produccion-gestion></app-produccion-gestion> }
+    @case ('sanidad') { <app-estado-sanitario-gestion></app-estado-sanitario-gestion> }
+    @case ('alertas') { <app-alertas-gestion></app-alertas-gestion> }
+    @case ('reportes') { <app-reportes-dashboard></app-reportes-dashboard> }
+  }
+</main>
+
+  <!-- Pie de Página -->
+  <footer class="main-footer">
+    <p>PoultryTrack © 2026 - Sistema de Monitoreo e Informes de Galpones Avícolas</p>
+  </footer>
+</div>

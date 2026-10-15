@@ -1,0 +1,237 @@
+<div class="reportes-container">
+  <!-- Tarjetas Resumen e Indicadores Clave (KPIs) -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon">📊</div>
+      <div class="kpi-data">
+        <span class="kpi-title">% Postura Promedio</span>
+        <span class="kpi-value">{{ promedioPosturaGlobal() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon">🥚</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Producción Total (Huevos)</span>
+        <span class="kpi-value">{{ totalHuevosGlobal() | number }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon">🌡️</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Temperatura Promedio</span>
+        <span class="kpi-value">{{ promedioTemperaturaGlobal() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card warning">
+      <div class="kpi-icon">⚡</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Índice Eficiencia General</span>
+        <span class="kpi-value gold">{{ indiceEficienciaPromedio() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel Visual de Estadísticas por Variable -->
+  <div class="charts-overview">
+    <div class="chart-card">
+      <h4>📈 Rendimiento de Postura por Galpón</h4>
+      <div class="progress-bar-group">
+        <div class="bar-item">
+          <span>Galpón GAL-001 (Ponedoras A)</span>
+          <div class="progress-track"><div class="progress-fill" style="width: 92%;">92%</div></div>
+        </div>
+        <div class="bar-item">
+          <span>Galpón GAL-002 (Ponedoras B)</span>
+          <div class="progress-track"><div class="progress-fill" style="width: 88%;">88%</div></div>
+        </div>
+        <div class="bar-item">
+          <span>Galpón GAL-003 (Crianza)</span>
+          <div class="progress-track"><div class="progress-fill gold-bg" style="width: 79%;">79%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h4>🩺 Distribución de Estado Sanitario</h4>
+      <div class="health-summary-list">
+        <div class="health-item green">
+          <span>🟢 Lotes Saludables</span>
+          <strong>70%</strong>
+        </div>
+        <div class="health-item yellow">
+          <span>🟡 En Observación</span>
+          <strong>18%</strong>
+        </div>
+        <div class="health-item red">
+          <span>🔴 En Tratamiento / Alerta</span>
+          <strong>12%</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encabezado del Módulo -->
+  <div class="modulo-header">
+    <div class="titulo">
+      <h2>Módulo de Reportes y Dashboard</h2>
+      <p>Generación de consolidados e indicadores estratégicos para la toma de decisiones</p>
+    </div>
+    <button class="btn-primario" (click)="abrirModalGenerar()">📊 Generar Nuevo Reporte</button>
+  </div>
+
+  <!-- Barra de Filtros -->
+  <div class="toolbar">
+    <div class="filters-group">
+      <input 
+        type="text" 
+        placeholder="Buscar por código de reporte o galpón..." 
+        [ngModel]="filtroBusqueda()" 
+        (ngModelChange)="filtroBusqueda.set($event); paginaActual.set(1)"
+        class="search-input"
+      />
+
+      <select 
+        [ngModel]="filtroGalpon()" 
+        (ngModelChange)="filtroGalpon.set($event); paginaActual.set(1)"
+        class="filter-select">
+        <option value="Todos">Todos los Galpones</option>
+        <option value="GAL-001">GAL-001</option>
+        <option value="GAL-002">GAL-002</option>
+        <option value="GAL-003">GAL-003</option>
+        <option value="GAL-004">GAL-004</option>
+        <option value="GAL-005">GAL-005</option>
+      </select>
+
+      <select 
+        [ngModel]="filtroPeriodo()" 
+        (ngModelChange)="filtroPeriodo.set($event)"
+        class="filter-select">
+        <option value="Esta Semana">Esta Semana</option>
+        <option value="Este Mes">Este Mes</option>
+        <option value="Último Trimestre">Último Trimestre</option>
+      </select>
+    </div>
+
+    <span class="total-count">
+      Mostrando <strong>{{ reportesFiltrados().length }}</strong> de {{ reporteService.reportes().length }} reportes
+    </span>
+  </div>
+
+  <!-- Tabla del Histórico de Reportes -->
+  <div class="tabla-wrapper">
+    <table class="tabla-reportes">
+      <thead>
+        <tr>
+          <th>Cód. Reporte</th>
+          <th>Galpón</th>
+          <th>Fecha</th>
+          <th>Total Postura</th>
+          <th>% Postura</th>
+          <th>Temp. Prom.</th>
+          <th>Alertas</th>
+          <th>Sanidad</th>
+          <th>Eficiencia</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (rep of reportesPaginados(); track rep.id) {
+          <tr>
+            <td class="font-bold code-badge">{{ rep.codigoReporte }}</td>
+            <td>
+              <span class="galpon-badge">🛖 {{ rep.galponCodigo }}</span>
+            </td>
+            <td>📅 {{ rep.fechaReporte }}</td>
+            <td class="font-bold">🥚 {{ rep.totalHuevosPostura | number }}</td>
+            <td class="font-bold gold-text">{{ rep.porcentajePosturaPromedio }}%</td>
+            <td>🌡️ {{ rep.temperaturaPromedio }}°C</td>
+            <td>
+              <span class="alert-count-tag" [class.has-alerts]="rep.alertasGeneradasCount > 0">
+                ⚡ {{ rep.alertasGeneradasCount }}
+              </span>
+            </td>
+            <td>
+              <span class="status-badge" [ngClass]="rep.estadoSanitarioPredominante.toLowerCase().replace(' ', '-').replace('ó', 'o')">
+                {{ rep.estadoSanitarioPredominante }}
+              </span>
+            </td>
+            <td class="font-bold green-text">{{ rep.indiceEficiencia }}%</td>
+            <td class="acciones-cell">
+              <button class="btn-icon ver-btn" (click)="abrirModalGenerar(rep)" title="Ver Informe Detallado">👁️ Ver</button>
+              <button class="btn-icon eliminar" (click)="eliminarReporte(rep.id)" title="Eliminar Registro">🗑️</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="10" class="no-data">No se encontraron reportes estadísticos registrados.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginador -->
+  <div class="pagination-bar">
+    <button class="btn-page" [disabled]="paginaActual() === 1" (click)="irAPagina(paginaActual() - 1)">
+      ◀ Anterior
+    </button>
+    <span class="page-info">Página <strong>{{ paginaActual() }}</strong> de <strong>{{ totalPaginas() }}</strong></span>
+    <button class="btn-page" [disabled]="paginaActual() === totalPaginas()" (click)="irAPagina(paginaActual() + 1)">
+      Siguiente ▶
+    </button>
+  </div>
+
+  <!-- Modal Exportar / Consultar Reporte Detallado -->
+  @if (mostrarModalReporte() && reporteDetalle()) {
+    <div class="modal-overlay">
+      <div class="modal-content modal-lg">
+        <div class="modal-header">
+          <h3>📄 Informe Ejecutivo Consolidado - {{ reporteDetalle()?.codigoReporte }}</h3>
+          <button class="btn-close" (click)="cerrarModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="report-header-card">
+            <p><strong>Galpón Evaluado:</strong> {{ reporteDetalle()?.galponCodigo }} | <strong>Fecha:</strong> {{ reporteDetalle()?.fechaReporte }}</p>
+            <p><strong>Índice de Eficiencia Operativa:</strong> <span class="green-text font-bold">{{ reporteDetalle()?.indiceEficiencia }}%</span></p>
+          </div>
+
+          <h4>Indicadores Consolidados de Producción y Sensores</h4>
+          <div class="metrics-grid-modal">
+            <div class="metric-box">
+              <span>Producción de Huevos</span>
+              <strong>🥚 {{ reporteDetalle()?.totalHuevosPostura | number }}</strong>
+            </div>
+            <div class="metric-box">
+              <span>% Postura Estimada</span>
+              <strong>📈 {{ reporteDetalle()?.porcentajePosturaPromedio }}%</strong>
+            </div>
+            <div class="metric-box">
+              <span>Temperatura Promedio</span>
+              <strong>🌡️ {{ reporteDetalle()?.temperaturaPromedio }}°C</strong>
+            </div>
+            <div class="metric-box">
+              <span>Humedad Relativa</span>
+              <strong>💧 {{ reporteDetalle()?.humedadPromedio }}%</strong>
+            </div>
+          </div>
+
+          <h4>Evaluación Sanitaria y Alertas Ambientales</h4>
+          <p class="summary-text">
+            Durante la jornada del {{ reporteDetalle()?.fechaReporte }}, el galpón mantuvo un estado sanitario predominante 
+            <strong>{{ reporteDetalle()?.estadoSanitarioPredominante }}</strong> con un total de 
+            <strong>{{ reporteDetalle()?.alertasGeneradasCount }} alertas</strong> registradas por la red de sensores IoT.
+          </p>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secundario" (click)="cerrarModal()">Cerrar</button>
+            <button type="button" class="btn-primario" (click)="cerrarModal()">📥 Simular Descarga (PDF / Excel)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,305 @@
+<div class="alertas-container">
+  <!-- Tarjetas Resumen (KPIs) -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon">🔔</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Total Alertas Generadas</span>
+        <span class="kpi-value">{{ totalAlertasCount() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card warning">
+      <div class="kpi-icon">⚠️</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Alertas Activas</span>
+        <span class="kpi-value gold">{{ activasCount() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card alert">
+      <div class="kpi-icon">🚨</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Nivel Crítico</span>
+        <span class="kpi-value red">{{ criticasCount() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon">📲</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Notificaciones Enviadas</span>
+        <span class="kpi-value">{{ notificadasCount() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encabezado del Módulo -->
+  <div class="modulo-header">
+    <div class="titulo">
+      <h2>Módulo de Alertas y Notificaciones</h2>
+      <p>Generación automática de alertas ambientales y despacho de notificaciones al personal</p>
+    </div>
+    <button class="btn-primario" (click)="abrirModalNuevo()">+ Crear Alerta Manual</button>
+  </div>
+
+  <!-- Barra de Filtros -->
+  <div class="toolbar">
+    <div class="filters-group">
+      <input 
+        type="text" 
+        placeholder="Buscar por código, galpón o variable..." 
+        [ngModel]="filtroBusqueda()" 
+        (ngModelChange)="filtroBusqueda.set($event); paginaActual.set(1)"
+        class="search-input"
+      />
+
+      <select 
+        [ngModel]="filtroGalpon()" 
+        (ngModelChange)="filtroGalpon.set($event); paginaActual.set(1)"
+        class="filter-select">
+        <option value="Todos">Todos los Galpones</option>
+        <option value="GAL-001">GAL-001</option>
+        <option value="GAL-002">GAL-002</option>
+        <option value="GAL-003">GAL-003</option>
+        <option value="GAL-004">GAL-004</option>
+        <option value="GAL-005">GAL-005</option>
+      </select>
+
+      <select 
+        [ngModel]="filtroNivel()" 
+        (ngModelChange)="filtroNivel.set($event); paginaActual.set(1)"
+        class="filter-select">
+        <option value="Todos">Todos los Niveles</option>
+        <option value="Bajo">Bajo</option>
+        <option value="Medio">Medio</option>
+        <option value="Alto">Alto</option>
+        <option value="Crítico">Crítico</option>
+      </select>
+
+      <select 
+        [ngModel]="filtroEstado()" 
+        (ngModelChange)="filtroEstado.set($event); paginaActual.set(1)"
+        class="filter-select">
+        <option value="Todos">Todos los Estados</option>
+        <option value="Activa">Activa</option>
+        <option value="Atendida">Atendida</option>
+        <option value="Resuelta">Resuelta</option>
+      </select>
+    </div>
+
+    <span class="total-count">
+      Mostrando <strong>{{ alertasFiltradas().length }}</strong> de {{ totalAlertasCount() }} alertas
+    </span>
+  </div>
+
+  <!-- Tabla del Histórico de Alertas -->
+  <div class="tabla-wrapper">
+    <table class="tabla-alertas">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Galpón</th>
+          <th>Variable</th>
+          <th>Nivel Alerta</th>
+          <th>Valor / Límite</th>
+          <th>Fecha y Hora</th>
+          <th>Estado</th>
+          <th>Notificación</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (alerta of alertasPaginadas(); track alerta.id) {
+          <tr>
+            <td class="font-bold code-badge">{{ alerta.codigoAlerta }}</td>
+            <td>
+              <span class="galpon-badge">🛖 {{ alerta.galponCodigo }}</span>
+            </td>
+            <td class="font-bold">{{ alerta.tipoVariable }}</td>
+            <td>
+              <span class="nivel-badge" [ngClass]="alerta.nivel.toLowerCase().replace('í', 'i')">
+                {{ alerta.nivel }}
+              </span>
+            </td>
+            <td>
+              <div class="value-limit">
+                <span class="value red-text">{{ alerta.valorDetectado }}</span>
+                <span class="limit">({{ alerta.limitePermitido }})</span>
+              </div>
+            </td>
+            <td class="date-text">🕒 {{ alerta.fechaHora }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="alerta.estado.toLowerCase()">
+                {{ alerta.estado }}
+              </span>
+            </td>
+            <td>
+              @if (alerta.notificacionEnviada) {
+                <span class="notif-badge enviada">📩 Enviada ({{ alerta.destinatarioRol }})</span>
+              } @else {
+                <span class="notif-badge pendiente">⏳ Pendiente</span>
+              }
+            </td>
+            <td class="acciones-cell">
+              <button class="btn-icon notif-btn" (click)="abrirModalNotificacion(alerta)" title="Gestionar Notificación">
+                📲 Notificar
+              </button>
+              <button class="btn-icon editar" (click)="abrirModalEditar(alerta)" title="Editar Alerta">✏️</button>
+              <button class="btn-icon eliminar" (click)="eliminarAlerta(alerta.id)" title="Eliminar Alerta">🗑️</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="9" class="no-data">No se encontraron alertas registradas.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginador -->
+  <div class="pagination-bar">
+    <button class="btn-page" [disabled]="paginaActual() === 1" (click)="irAPagina(paginaActual() - 1)">
+      ◀ Anterior
+    </button>
+    <span class="page-info">Página <strong>{{ paginaActual() }}</strong> de <strong>{{ totalPaginas() }}</strong></span>
+    <button class="btn-page" [disabled]="paginaActual() === totalPaginas()" (click)="irAPagina(paginaActual() + 1)">
+      Siguiente ▶
+    </button>
+  </div>
+
+  <!-- Modal Registrar / Editar Alerta -->
+  @if (mostrarModalForm()) {
+    <div class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>{{ modoEdicion() ? 'Editar Configuración de Alerta' : 'Crear Alerta Manual' }}</h3>
+          <button class="btn-close" (click)="cerrarModales()">✕</button>
+        </div>
+
+        <form (submit)="$event.preventDefault(); guardarAlerta()" class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código Alerta</label>
+              <input type="text" [(ngModel)]="alertaForm().codigoAlerta" name="codigoAlerta" required readonly class="read-only" />
+            </div>
+            <div class="form-group">
+              <label>Galpón Asignado</label>
+              <select [(ngModel)]="alertaForm().galponCodigo" name="galponCodigo">
+                <option value="GAL-001">GAL-001</option>
+                <option value="GAL-002">GAL-002</option>
+                <option value="GAL-003">GAL-003</option>
+                <option value="GAL-004">GAL-004</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Variable Ambiental</label>
+              <select [(ngModel)]="alertaForm().tipoVariable" name="tipoVariable">
+                <option value="Temperatura">Temperatura</option>
+                <option value="Humedad">Humedad</option>
+                <option value="CO2">CO2</option>
+                <option value="NH3">NH3</option>
+                <option value="Fallo de Red">Fallo de Red</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Nivel de Gravedad</label>
+              <select [(ngModel)]="alertaForm().nivel" name="nivel">
+                <option value="Bajo">🟢 Bajo</option>
+                <option value="Medio">🟡 Medio</option>
+                <option value="Alto">🟠 Alto</option>
+                <option value="Crítico">🔴 Crítico</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Valor Detectado</label>
+              <input type="text" [(ngModel)]="alertaForm().valorDetectado" name="valorDetectado" required />
+            </div>
+            <div class="form-group">
+              <label>Límite Permitido</label>
+              <input type="text" [(ngModel)]="alertaForm().limitePermitido" name="limitePermitido" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Estado Alerta</label>
+              <select [(ngModel)]="alertaForm().estado" name="estado">
+                <option value="Activa">Activa</option>
+                <option value="Atendida">Atendida</option>
+                <option value="Resuelta">Resuelta</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Destinatario Notificación</label>
+              <select [(ngModel)]="alertaForm().destinatarioRol" name="destinatarioRol">
+                <option value="Todos">Todos los Usuarios</option>
+                <option value="Administrador">Administrador</option>
+                <option value="Veterinario">Veterinario</option>
+                <option value="Trabajador">Trabajador</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Mensaje de Notificación</label>
+            <textarea [(ngModel)]="alertaForm().mensajeNotificacion" name="mensajeNotificacion" rows="2" required></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secundario" (click)="cerrarModales()">Cancelar</button>
+            <button type="submit" class="btn-primario">{{ modoEdicion() ? 'Actualizar' : 'Guardar Alerta' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Enviar / Consultar Notificación -->
+  @if (mostrarModalNotificacion() && alertaSeleccionada()) {
+    <div class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>📲 Notificación de Alerta - {{ alertaSeleccionada()?.codigoAlerta }}</h3>
+          <button class="btn-close" (click)="cerrarModales()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="notif-info-card">
+            <p><strong>Galpón:</strong> {{ alertaSeleccionada()?.galponCodigo }} | <strong>Variable:</strong> {{ alertaSeleccionada()?.tipoVariable }}</p>
+            <p><strong>Nivel:</strong> <span class="nivel-badge inline">{{ alertaSeleccionada()?.nivel }}</span></p>
+            <p><strong>Destinatarios:</strong> Rol {{ alertaSeleccionada()?.destinatarioRol }}</p>
+          </div>
+
+          <div class="message-preview">
+            <label>Mensaje de Notificación Envitado:</label>
+            <p class="preview-text">"{{ alertaSeleccionada()?.mensajeNotificacion }}"</p>
+          </div>
+
+          <div class="status-notif-row">
+            <span>Estado de Notificación:</span>
+            @if (alertaSeleccionada()?.notificacionEnviada) {
+              <span class="status-green">✅ Notificación enviada con éxito</span>
+            } @else {
+              <span class="status-yellow">⚠️ Notificación pendiente de envío</span>
+            }
+          </div>
+
+          <div class="modal-footer">
+            @if (!alertaSeleccionada()?.notificacionEnviada) {
+              <button type="button" class="btn-primario" (click)="enviarNotificacionSimulada()">🚀 Simular Envío Ahora</button>
+            }
+            <button type="button" class="btn-secundario" (click)="cerrarModales()">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

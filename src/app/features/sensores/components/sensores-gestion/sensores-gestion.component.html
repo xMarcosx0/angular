@@ -1,0 +1,260 @@
+<div class="sensores-container">
+  <!-- Tarjetas Resumen (KPIs) -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon">📡</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Total Sensores IoT</span>
+        <span class="kpi-value">{{ totalSensoresCount() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon">🟢</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Sensores Activos</span>
+        <span class="kpi-value">{{ activosCount() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card warning">
+      <div class="kpi-icon">🛠️</div>
+      <div class="kpi-data">
+        <span class="kpi-title">En Mantenimiento / Calibración</span>
+        <span class="kpi-value gold">{{ mantenimientoCount() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card alert">
+      <div class="kpi-icon">🔴</div>
+      <div class="kpi-data">
+        <span class="kpi-title">Sensores Inactivos</span>
+        <span class="kpi-value red">{{ inactivosCount() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encabezado del Módulo -->
+  <div class="modulo-header">
+    <div class="titulo">
+      <h2>Gestión de Sensores IoT</h2>
+      <p>Administración y monitoreo del estado de dispositivos ambientales en galpones</p>
+    </div>
+    <button class="btn-primario" (click)="abrirModalNuevo()">+ Registrar Sensor</button>
+  </div>
+
+  <!-- Barra de Filtros -->
+  <div class="toolbar">
+    <div class="filters-group">
+      <input 
+        type="text" 
+        placeholder="Buscar por código, galpón o ubicación..." 
+        [ngModel]="filtroBusqueda()" 
+        (ngModelChange)="filtroBusqueda.set($event); paginaActual.set(1)"
+        class="search-input"
+      />
+
+      <select 
+        [ngModel]="filtroTipo()" 
+        (ngModelChange)="filtroTipo.set($event); paginaActual.set(1)"
+        class="filter-select">
+        <option value="Todos">Todos los Tipos</option>
+        <option value="Temperatura">Temperatura</option>
+        <option value="Humedad">Humedad</option>
+        <option value="Dióxido de Carbono (CO2)">CO2</option>
+        <option value="Amoníaco (NH3)">Amoníaco (NH3)</option>
+        <option value="Luminosidad">Luminosidad</option>
+      </select>
+
+      <select 
+        [ngModel]="filtroEstado()" 
+        (ngModelChange)="filtroEstado.set($event); paginaActual.set(1)"
+        class="filter-select">
+        <option value="Todos">Todos los Estados</option>
+        <option value="Activo">Activos</option>
+        <option value="Mantenimiento">Mantenimiento</option>
+        <option value="Calibración">Calibración</option>
+        <option value="Inactivo">Inactivos</option>
+      </select>
+    </div>
+
+    <span class="total-count">
+      Mostrando <strong>{{ sensoresFiltrados().length }}</strong> de {{ totalSensoresCount() }} sensores
+    </span>
+  </div>
+
+  <!-- Tabla de Consultar Sensores -->
+  <div class="tabla-wrapper">
+    <table class="tabla-sensores">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Tipo de Sensor</th>
+          <th>Galpón</th>
+          <th>Ubicación Interna</th>
+          <th>Última Lectura</th>
+          <th>Batería</th>
+          <th>Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (sensor of sensoresPaginados(); track sensor.id) {
+          <tr>
+            <td class="font-bold code-badge">{{ sensor.codigoSensor }}</td>
+            <td>
+              <span class="sensor-type-tag">
+                @switch (sensor.tipo) {
+                  @case ('Temperatura') { 🌡️ }
+                  @case ('Humedad') { 💧 }
+                  @case ('Dióxido de Carbono (CO2)') { 💨 }
+                  @case ('Amoníaco (NH3)') { ☣️ }
+                  @case ('Luminosidad') { 💡 }
+                }
+                {{ sensor.tipo }}
+              </span>
+            </td>
+            <td class="font-bold">
+              <span class="galpon-badge">🛖 {{ sensor.galponCodigo }}</span>
+            </td>
+            <td>{{ sensor.ubicacion }}</td>
+            <td class="font-bold reading-text">{{ sensor.ultimaLectura }}</td>
+            <td>
+              <div class="battery-indicator">
+                <span [class.low-battery]="sensor.bateriaNivel < 20">🔋 {{ sensor.bateriaNivel }}%</span>
+              </div>
+            </td>
+            <td>
+              <span class="status-badge" [ngClass]="sensor.estado.toLowerCase()">
+                {{ sensor.estado }}
+              </span>
+            </td>
+            <td class="acciones-cell">
+              <button class="btn-icon estado-btn" (click)="abrirModalCambiarEstado(sensor)" title="Actualizar Estado">⚙️ Estado</button>
+              <button class="btn-icon editar" (click)="abrirModalEditar(sensor)" title="Editar Información">✏️</button>
+              <button class="btn-icon eliminar" (click)="eliminarSensor(sensor.id)" title="Eliminar Sensor">🗑️</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="8" class="no-data">No se encontraron sensores registrados con los filtros aplicados.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginador -->
+  <div class="pagination-bar">
+    <button class="btn-page" [disabled]="paginaActual() === 1" (click)="irAPagina(paginaActual() - 1)">
+      ◀ Anterior
+    </button>
+    <span class="page-info">Página <strong>{{ paginaActual() }}</strong> de <strong>{{ totalPaginas() }}</strong></span>
+    <button class="btn-page" [disabled]="paginaActual() === totalPaginas()" (click)="irAPagina(paginaActual() + 1)">
+      Siguiente ▶
+    </button>
+  </div>
+
+  <!-- Modal Registrar / Editar Sensor -->
+  @if (mostrarModalForm()) {
+    <div class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>{{ modoEdicion() ? 'Editar Datos de Sensor' : 'Registrar Nuevo Sensor IoT' }}</h3>
+          <button class="btn-close" (click)="cerrarModales()">✕</button>
+        </div>
+
+        <form (submit)="$event.preventDefault(); guardarSensor()" class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código del Sensor</label>
+              <input type="text" [(ngModel)]="sensorForm().codigoSensor" name="codigoSensor" required readonly class="read-only" />
+            </div>
+            <div class="form-group">
+              <label>Tipo de Sensor</label>
+              <select [(ngModel)]="sensorForm().tipo" name="tipo">
+                <option value="Temperatura">Temperatura</option>
+                <option value="Humedad">Humedad</option>
+                <option value="Dióxido de Carbono (CO2)">Dióxido de Carbono (CO2)</option>
+                <option value="Amoníaco (NH3)">Amoníaco (NH3)</option>
+                <option value="Luminosidad">Luminosidad</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Galpón Asignado</label>
+              <select [(ngModel)]="sensorForm().galponCodigo" name="galponCodigo">
+                <option value="GAL-001">GAL-001 (Galpón Norte #1)</option>
+                <option value="GAL-002">GAL-002 (Galpón Norte #2)</option>
+                <option value="GAL-003">GAL-003 (Galpón Norte #3)</option>
+                <option value="GAL-004">GAL-004 (Galpón Sur #4)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Ubicación Específica</label>
+              <input type="text" [(ngModel)]="sensorForm().ubicacion" name="ubicacion" required placeholder="Ej. Techo - Módulo Central" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha de Instalación</label>
+              <input type="date" [(ngModel)]="sensorForm().fechaInstalacion" name="fechaInstalacion" required />
+            </div>
+            <div class="form-group">
+              <label>Estado Inicial</label>
+              <select [(ngModel)]="sensorForm().estado" name="estado">
+                <option value="Activo">Activo</option>
+                <option value="Mantenimiento">Mantenimiento</option>
+                <option value="Calibración">Calibración</option>
+                <option value="Inactivo">Inactivo</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secundario" (click)="cerrarModales()">Cancelar</button>
+            <button type="submit" class="btn-primario">{{ modoEdicion() ? 'Actualizar' : 'Registrar Sensor' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Actualizar Estado del Sensor -->
+  @if (mostrarModalEstado() && sensorSeleccionado()) {
+    <div class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>⚙️ Actualizar Estado - {{ sensorSeleccionado()?.codigoSensor }}</h3>
+          <button class="btn-close" (click)="cerrarModales()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="sensor-info-card">
+            <p><strong>Tipo:</strong> {{ sensorSeleccionado()?.tipo }}</p>
+            <p><strong>Galpón:</strong> {{ sensorSeleccionado()?.galponCodigo }} ({{ sensorSeleccionado()?.ubicacion }})</p>
+            <p><strong>Última Lectura:</strong> {{ sensorSeleccionado()?.ultimaLectura }}</p>
+          </div>
+
+          <div class="form-group">
+            <label>Selecciona el Nuevo Estado:</label>
+            <select [(ngModel)]="sensorSeleccionado()!.estado" class="select-estado-lg">
+              <option value="Activo">🟢 Activo (Operativo en red)</option>
+              <option value="Mantenimiento">🟡 Mantenimiento Preventivo</option>
+              <option value="Calibración">🔵 Calibración de Lecturas</option>
+              <option value="Inactivo">🔴 Inactivo / Desconectado</option>
+            </select>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secundario" (click)="cerrarModales()">Cancelar</button>
+            <button type="button" class="btn-primario" (click)="guardarEstado()">Guardar Nuevo Estado</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,24 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h2>PoultryTrack</h2>
+      <p>Selecciona un usuario para ingresar al módulo correspondiente</p>
+    </div>
+
+    <div class="users-list">
+      @for (user of authService.usuarios; track user.email) {
+        <div class="user-card" (click)="ingresarConRol(user)">
+          <div class="avatar">{{ user.avatar }}</div>
+          <div class="user-info">
+            <h3>{{ user.nombre }}</h3>
+            <span class="email">{{ user.email }}</span>
+            <span class="phone">📞 {{ user.telefono }}</span>
+          </div>
+          <div class="role-badge" [ngClass]="user.rol.toLowerCase()">
+            {{ user.rol }}
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
